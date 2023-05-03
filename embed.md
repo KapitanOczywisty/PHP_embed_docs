@@ -188,7 +188,7 @@ $ ./a.out
 string(11) "-=-=PHP-=-="
 ```
 
-We allocated 4 `zval`s for parameters and populated them with values, for the last parameter we're using `zend_get_constant_str` to get `zval` of `STR_PAD_BOTH`. Built-in constants are often defined in header files, in this example we could write `ZVAL_LONG(&fci.params[3], PHP_STR_PAD_BOTH)` (constant defined in `ext/standard/php_string.h`).
+To get the same result we could write `var_dump(str_pad("PHP", 11, "-=", STR_PAD_BOTH))`. To provide parameters we allocated `params` property with size of 4 `zval`s and populated them with values, for the last parameter we're using `zend_get_constant_str` to get `zval` of `STR_PAD_BOTH` constant. Built-in constants are often defined in header files, in this example we could write `ZVAL_LONG(&fci.params[3], PHP_STR_PAD_BOTH)` (constant defined in `ext/standard/php_string.h`).
 
 
 # WIP
