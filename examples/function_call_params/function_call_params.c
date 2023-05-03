@@ -45,9 +45,10 @@ int main(int argc, char **argv)
 		zval_ptr_dtor(&fci.params[2]);
 		// no dtor for &fci.params[3]
 		efree(fci.params);
+
+		zval_ptr_dtor(&retval);
 	}
 
-	zval_ptr_dtor(&retval);
 	zval_ptr_dtor(&func_name);
 
 	PHP_EMBED_END_BLOCK()

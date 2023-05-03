@@ -132,9 +132,10 @@ Let's try now to call a PHP function instead.
 		{
 			php_var_dump(&retval, 1);
 		}
+
+		zval_ptr_dtor(&retval);
 	}
 
-	zval_ptr_dtor(&retval);
 	zval_ptr_dtor(&func_name);
 // ...
 ```
@@ -178,6 +179,8 @@ Some functions require arguments, we can pass them in `zend_fcall_info` structur
 		zval_ptr_dtor(&fci.params[2]);
 		// no dtor for &fci.params[3]
 		efree(fci.params);
+
+		zval_ptr_dtor(&retval);
 // ...
 ```
 

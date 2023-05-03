@@ -30,9 +30,10 @@ int main(int argc, char **argv)
 		{
 			php_var_dump(&retval, 1);
 		}
+
+		zval_ptr_dtor(&retval);
 	}
 
-	zval_ptr_dtor(&retval);
 	zval_ptr_dtor(&func_name);
 
 	PHP_EMBED_END_BLOCK()
