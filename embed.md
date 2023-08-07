@@ -317,9 +317,37 @@ As we can see any global variables created in evaluated code are available after
 
 As we can see, calling userland and built-in functions is similar, this time for a change, we've used an array to call an anonymous class method. Also note that even if function returns `void`, we have to assign zval to `fci.retval`, because PHP will try to assign `NULL` there.
 
-# WIP
-## Parsing PHP code
 ## Parsing PHP files
+
+With some basics covered we can start interacting with PHP code.
+
+```c
+/* examples/execute_file_basic/execute_file_basic.c */
+// ...
+	zend_file_handle file_handle;
+	zend_stream_init_filename(&file_handle, "example.php");
+
+	if (php_execute_script(&file_handle) == FAILURE)
+	{
+		php_printf("Failed to execute PHP script.\n");
+	}
+// ...
+```
+
+```php
+<?php
+
+/* examples/execute_file_basic/example.php */
+
+echo 'Hello from userland!' . PHP_EOL;
+```
+
+```bash
+$ ./a.out
+Hello from userland!
+```
+
+# WIP
 ## Error handling
 ## Multiple requests
 ## Input / output (+request_info)
