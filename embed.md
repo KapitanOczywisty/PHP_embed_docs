@@ -166,7 +166,7 @@ Some functions require arguments, we can pass them in `zend_fcall_info` structur
 		ZVAL_STRING(&fci.params[0], "PHP");
 		ZVAL_LONG(&fci.params[1], 11);
 		ZVAL_STRING(&fci.params[2], "-=");
-		fci.params[3] = *zend_get_constant_str("STR_PAD_BOTH", sizeof("STR_PAD_BOTH") - 1);
+		fci.params[3] = *zend_get_constant_str(ZEND_STRL("STR_PAD_BOTH"));
 
 		if (zend_call_function(&fci, &fcc) == SUCCESS)
 		{
@@ -191,7 +191,7 @@ $ ./a.out
 string(11) "-=-=PHP-=-="
 ```
 
-To get the same result we could write `var_dump(str_pad("PHP", 11, "-=", STR_PAD_BOTH))`. To provide parameters we allocated `params` property with size of 4 `zval`s and populated them with values, for the last parameter we're using `zend_get_constant_str` to get `zval` of `STR_PAD_BOTH` constant. Built-in constants are often defined in header files, in this example we could write `ZVAL_LONG(&fci.params[3], PHP_STR_PAD_BOTH)` (constant defined in `ext/standard/php_string.h`).
+To get the same result we could write `var_dump(str_pad("PHP", 11, "-=", STR_PAD_BOTH))`. To provide parameters we allocated `params` property with size of 4 `zval`s and populated them with values, for the last parameter we're using `zend_get_constant_str` to get `zval` of `STR_PAD_BOTH` constant. Built-in constants are often defined in header files, in this example we could write `ZVAL_LONG(&fci.params[3], PHP_STR_PAD_BOTH)` (constant defined in `ext/standard/php_string.h`). `ZEND_STRL` is a simple macro to pass string and size as 2 parameters.
 
 
 # WIP

@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 		ZVAL_STRING(&fci.params[0], "PHP");
 		ZVAL_LONG(&fci.params[1], 11);
 		ZVAL_STRING(&fci.params[2], "-=");
-		fci.params[3] = *zend_get_constant_str("STR_PAD_BOTH", sizeof("STR_PAD_BOTH") - 1);
+		fci.params[3] = *zend_get_constant_str(ZEND_STRL("STR_PAD_BOTH"));
 
 		if (zend_call_function(&fci, &fcc) == SUCCESS)
 		{
