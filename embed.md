@@ -193,6 +193,129 @@ string(11) "-=-=PHP-=-="
 
 To get the same result we could write `var_dump(str_pad("PHP", 11, "-=", STR_PAD_BOTH))`. To provide parameters we allocated `params` property with size of 4 `zval`s and populated them with values, for the last parameter we're using `zend_get_constant_str` to get `zval` of `STR_PAD_BOTH` constant. Built-in constants are often defined in header files, in this example we could write `ZVAL_LONG(&fci.params[3], PHP_STR_PAD_BOTH)` (constant defined in `ext/standard/php_string.h`). `ZEND_STRL` is a simple macro to pass string and size as 2 parameters.
 
+## Parsing PHP code
+
+Time to start parsing some PHP code.
+
+```c
+/* examples/eval_code_basic/eval_code_basic.c */
+
+// ...
+	if (zend_eval_stringl(ZEND_STRL("echo 'This message is produced by ' . php_sapi_name() . ' SAPI' . PHP_EOL;"), NULL, "embed eval code") == FAILURE)
+	{
+		php_printf("Failed to eval PHP.\n");
+	}
+// ...
+```
+
+Example output:
+
+```bash
+$ ./a.out
+This message is produced by embed SAPI
+```
+
+We're using `zend_eval_stringl` to execute echo with example message. The last argument is intended for filename, and it's used for error reporting. We can also get return value of evaluated code.
+
+```c
+/* examples/eval_code_return/eval_code_return.c */
+// ...
+	zval retval;
+
+	// this should store int(6) in retval, right?
+	if (zend_eval_stringl(ZEND_STRL("$a = 3;return $a * 2;"), &retval, "embed eval code") == FAILURE)
+	{
+		php_printf("Failed to eval PHP.\n");
+	}
+	else
+	{
+		// retval has int(3), that's unexpected...
+		php_var_dump(&retval, 0);
+	}
+// ...
+```
+
+When `retval` is passed to `zend_eval_stringl`, [`"return "` is added to the beggining](https://github.com/php/php-src/blob/f6c0c60ef63c1e528dd3bd945c8f22270bbe3837/Zend/zend_execute_API.c#L1278-L1280) of the code, because of that `return $a * 2;` is never executed.
+
+Internally `zend_eval_string` calls `zend_compile_string` and `zend_execute` functions, we will go back to them later in [:bookmark_tabs: Error handling](#) chapter. For now we can explore another feature of PHP - global variables.
+
+```c
+/* examples/eval_code_global_var/eval_code_global_var.c */
+
+// ...
+	// variables in global scope can be accesed later
+	if (zend_eval_stringl(ZEND_STRL("$a = 3;$a *= 2;"), NULL, "embed eval code") == FAILURE)
+	{
+		php_printf("Failed to eval PHP.\n");
+	}
+	else
+	{
+		zval *result;
+		zend_string *var_name = zend_string_init(ZEND_STRL("a"), 0);
+
+		// find global variable $a
+		result = zend_hash_find(&EG(symbol_table), var_name);
+		if (result == NULL)
+		{
+			php_printf("Failed to find variable.\n");
+		}
+		else
+		{
+			php_var_dump(result, 0);
+		}
+
+		zend_string_release(var_name);
+	}
+// ...
+```
+
+As we can see any global variables created in evaluated code are available after execution, and not just variables, but also defined functions and classes. For now we're using single request, in [:bookmark_tabs: Multiple requests](#) chapter we'll change that. Before moving on we can also try calling method defined in PHP code.
+
+```c
+/* examples/eval_code_call_method/eval_code_call_method.c */
+
+// ...
+	zval retval;
+
+	if (zend_eval_stringl(ZEND_STRL("new class { function SayHi(){ echo 'Hello!' . PHP_EOL; } }"), &retval, "embed eval code") == FAILURE)
+	{
+		php_printf("Failed to eval PHP.\n");
+	}
+	else
+	{
+		zend_fcall_info fci;
+		zend_fcall_info_cache fcc;
+
+		// define function name as [$class, "SayHi"]
+		zval func_name;
+		array_init(&func_name);
+		add_next_index_zval(&func_name, &retval);
+		add_next_index_stringl(&func_name, ZEND_STRL("SayHi"));
+
+		if (zend_fcall_info_init(&func_name, 0, &fci, &fcc, NULL, NULL) == FAILURE)
+		{
+			php_printf("Error initializing function call info\n");
+		}
+		else
+		{
+			// fci.retval is required even if function doesn't return anything
+			// we can reuse retval, its value was already copied to array
+			fci.retval = &retval;
+
+			if (zend_call_function(&fci, &fcc) == FAILURE)
+			{
+				php_printf("Error calling function\n");
+			}
+		}
+
+		zval_ptr_dtor(&func_name);
+	}
+
+	zval_ptr_dtor(&retval);
+// ...
+```
+
+As we can see, calling userland and built-in functions is similar, this time for a change, we've used an array to call an anonymous class method. Also note that even if function returns `void`, we have to assign zval to `fci.retval`, because PHP will try to assign `NULL` there.
 
 # WIP
 ## Parsing PHP code
